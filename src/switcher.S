@@ -1,3 +1,5 @@
+#include "comps_offsets.h"
+
 .global switcher_entry
 .global switch_compartment
 

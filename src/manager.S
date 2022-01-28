@@ -1,5 +1,8 @@
+#include "comps_offsets.h"
+
 // Variables
 .global comps_addr
+.global comps_cnt
 .global switcher_caps
 
 // Functions
@@ -15,12 +18,16 @@
  */
 .type init_compartments, "function"
 init_compartments:
+    // Get address to store at
+    adr       x3, switcher_caps
+
     // Derive DDC
     cvtp      c0, x0
-    scbnds   c0, c0, #32
+    scbnds    c0, c0, #32
 
     // Store DDC
-    str       c0, =comps_addr
+    str       c0, [x3]
+    add       x3, x3, #16
 
     // Derive PCC
     cvtp      c1, x1
@@ -28,7 +35,7 @@ init_compartments:
     scbndse   c1, c1, x2
 
     // Store PCC
-    str       c1, =comps_addr+16
+    str       c1, [x3]
 
     ret
 
@@ -44,12 +51,20 @@ add_compartment:
 
   // Derive compartment DDC
 
-  // Update DDC
-  ldr         c0, =comps_addr
+  // Increment counter
+  adr         x2, comps_cnt
+  ldr         x3, [x2]
+  add         x3, x3, #1
+  str         x3, [x2]
+
+
+  // Update switcher DDC
+  adr         x2, switcher_caps
+  ldr         c0, [x2]
   gclen       x1, c0
   add         x1, x1, #32
   scbndse     c0, c0, x1
-  str         c0, =comps_addr
+  str         c0, [x2]
 
   ret
 
