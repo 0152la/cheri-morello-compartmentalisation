@@ -3,3 +3,4 @@ build/
 **/*.swp
 
 build.sh
+up.sh
