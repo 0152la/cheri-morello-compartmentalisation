@@ -1,8 +1,17 @@
+.data
+
+comps_cnt:     .int 0
+comps_addr:    .long 0x0
+switcher_caps: .long 0x0
+
+.text
+.balign 4
+
 #include "comps_offsets.h"
 
 // Variables
-.global comps_addr
 .global comps_cnt
+.global comps_addr
 .global switcher_caps
 
 // Functions
