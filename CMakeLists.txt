@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(CheriMorelloCompartments)
+project(CheriMorelloCompartments LANGUAGES C ASM)
 
 set(INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
 set(SRC_DIR ${CMAKE_SOURCE_DIR}/src)
