@@ -1,3 +1,6 @@
+#include "stdint.h"
+#include "stdlib.h"
+
 #include "cheriintrin.h"
 
 /*******************************************************************************
@@ -21,7 +24,7 @@ int
 main()
 {
     uint8_t* switcher_start = malloc(switcher_mem_max_size);
-    uintptr_t switch_comp_addr = &switch_compartment;
+    uintptr_t switch_comp_addr = (uintptr_t) switch_compartment;
 
     init_compartments(switcher_start, switch_comp_addr);
     return 0;
