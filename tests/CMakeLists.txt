@@ -3,4 +3,5 @@ add_executable(simple
 
 target_link_libraries(simple morello-compartments)
 
-add_test(NAME simple COMMAND simple )
+add_test(NAME simple
+         COMMAND ${CMAKE_SOURCE_DIR}/tests/run_test.sh $<TARGET_FILE:simple>)

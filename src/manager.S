@@ -1,8 +1,8 @@
 .data
 
-comps_cnt:     .int 0
-comps_addr:    .long 0x0
-switcher_caps: .long 0x0
+comps_cnt:     .dword 0
+comps_addr:    .dword
+switcher_caps: .dword
 
 .text
 .balign 4
