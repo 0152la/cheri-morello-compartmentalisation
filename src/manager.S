@@ -15,9 +15,31 @@ switcher_caps: .dword
 .global switcher_caps
 
 // Functions
+.global asm_call_wrapper
 .global init_compartments
 .global add_compartment
 .global del_compartment
+
+/**
+ * Wrapper to store/restore state when coming from C
+ *
+ * @param x0 ASM function to call
+ * @param x1-x6 parameters to pass to function in c0
+ */
+.type asm_call_wrapper, "function"
+asm_call_wrapper:
+    // Save `x0` so we can temporarily use it
+    cvtp      c0, x0
+    str       c0, [sp]
+
+    // Derive `clr` (in case asm function does something weird with `PCC`)
+    cvtp      c0, lr
+    swp       c0, c0, [sp]
+    sub       sp, sp, #16
+
+    blr       c0
+    ldr       clr, [sp]
+    ret       clr
 
 /**
  * Sets up memory for compartments
@@ -27,24 +49,19 @@ switcher_caps: .dword
  */
 .type init_compartments, "function"
 init_compartments:
-    // Get address to store at
-    adr       x3, switcher_caps
 
     // Derive DDC
     cvtp      c0, x0
-    scbnds    c0, c0, #32
-
-    // Store DDC
-    str       c0, [x3]
-    add       x3, x3, #16
+    scbnds    c0, c0, x1
 
     // Derive PCC
-    cvtp      c1, x1
+    cvtp      c1, x2
     mov       x2, #320 // TODO dynamic value
     scbndse   c1, c1, x2
 
-    // Store PCC
-    str       c1, [x3]
+    // Store (DDC, PCC) at `[switcher_caps]`
+    ldr       x3, switcher_caps
+    stp       c0, c1, [x3]
 
     ret
 
