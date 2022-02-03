@@ -38,30 +38,31 @@ asm_call_wrapper:
     sub       sp, sp, #16
 
     blr       c0
-    ldr       clr, [sp]
+    ldr       clr, [sp, #16]!
     ret       clr
 
 /**
  * Sets up memory for compartments
  *
  * @param c0 Start address of switcher memory region
- * @param c1 Address of `switch_compartment`
+ * @param c1 Size of switcher memory region
+ * @param c2 Address of `switch_compartment`
  */
 .type init_compartments, "function"
 init_compartments:
 
     // Derive DDC
-    cvtp      c0, x0
-    scbnds    c0, c0, x1
+    cvtp      c1, x1
+    scbnds    c1, c1, x2
 
     // Derive PCC
-    cvtp      c1, x2
-    mov       x2, #320 // TODO dynamic value
-    scbndse   c1, c1, x2
+    cvtp      c2, x3
+    mov       x3, #320 // TODO dynamic value
+    scbndse   c2, c2, x3
 
     // Store (DDC, PCC) at `[switcher_caps]`
-    ldr       x3, switcher_caps
-    stp       c0, c1, [x3]
+    ldr       x4, switcher_caps
+    stp       c1, c2, [x4]
 
     ret
 
