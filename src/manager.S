@@ -1,8 +1,8 @@
 .data
 
 comps_cnt:     .dword 0
-comps_addr:    .dword
-switcher_caps: .dword
+comps_addr:    .dword 0
+switcher_caps: .dword 0
 
 .text
 .balign 4
@@ -44,9 +44,9 @@ asm_call_wrapper:
 /**
  * Sets up memory for compartments
  *
- * @param c0 Start address of switcher memory region
- * @param c1 Size of switcher memory region
- * @param c2 Address of `switch_compartment`
+ * @param c1 Start address of switcher memory region
+ * @param c2 Size of switcher memory region
+ * @param c3 Address of `switch_compartment`
  */
 .type init_compartments, "function"
 init_compartments:
@@ -69,21 +69,34 @@ init_compartments:
 /**
  * Function to add information for a compartment
  *
- * @param c0 Start address
- * @param c1 Function address
+ * @param c1 Start address
+ * @param c2 Size of memory region
+ * @param c3 Function address
  */
 .type add_compartment, "function"
 add_compartment:
+
   // Derive compartment PCC
+  cvtp        c3, x3
+  mov         x4, #320 // TODO dynamic value
+  scbndse     c3, c3, x4
 
   // Derive compartment DDC
+  cvtp        c1, x1
+  scbnds      c2, c1, x2
+
+  // Store new PCC and DDC
+  ldr         x0, comps_addr
+  ldr         x1, comps_cnt
+  mov         x3, #COMP_SIZE
+  madd        x0, x1, x2, x0
+  stp         c3, c2, [x0]
 
   // Increment counter
-  adr         x2, comps_cnt
-  ldr         x3, [x2]
-  add         x3, x3, #1
-  str         x3, [x2]
-
+  adr         x3, comps_cnt
+  ldr         x4, [x3]
+  add         x4, x4, #1
+  str         x4, [x3]
 
   // Update switcher DDC
   adr         x2, switcher_caps
