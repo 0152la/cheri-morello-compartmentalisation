@@ -54,9 +54,16 @@ init_compartments:
     // Save `lr`
     mov       x6, lr
 
+    // Compute size of required memory, equivalent to `length` parameter of
+    // `mmap`
+    mov       x0, #COMP_SIZE
+    mov       x1, #MAX_COMP_COUNT
+    mov       x2, #32    // size of the 2 switcher capabilities
+    madd      x1, x0, x1, x2
+
     // Allocate memory for switcher
     mov       x0, xzr    // address
-    mov       x1, #128   // length
+                         // length - already stored in `x1`
     mov       w2, #3     // prot == PROT_READ | PROT_WRITE
     mov       w3, #4098  // flags == MAP_PRIVATE | MAP_ANONYMOUS
     mov       w4, #-1    // fd
