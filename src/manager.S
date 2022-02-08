@@ -44,25 +44,50 @@ asm_call_wrapper:
 /**
  * Sets up memory for compartments
  *
- * @param c1 Start address of switcher memory region
- * @param c2 Size of switcher memory region
- * @param c3 Address of `switch_compartment`
+ * Initializes required memory for compartments. This involves allocating a
+ * memory region for use by switcher code, to contain required capabilities,
+ * and deriving appropriate PCC/DDC values containing the executable switcher
+ * code, and the aforementioned memory region, respectively.
  */
 .type init_compartments, "function"
 init_compartments:
+    // Save `lr`
+    mov       x6, lr
 
-    // Derive DDC
-    cvtp      c1, x1
-    scbnds    c1, c1, x2
+    // Allocate memory for switcher
+    mov       x0, xzr    // address
+    mov       x1, #128   // length
+    mov       w2, #3     // prot == PROT_READ | PROT_WRITE
+    mov       w3, #4098  // flags == MAP_PRIVATE | MAP_ANONYMOUS
+    mov       w4, #-1    // fd
+    mov       w5, wzr    // offset
+    bl        mmap
 
-    // Derive PCC
-    cvtp      c2, x3
-    mov       x3, #320 // TODO dynamic value
-    scbndse   c2, c2, x3
+    // Restore `lr`
+    mov       lr, x6
 
-    // Store (DDC, PCC) at `[switcher_caps]`
-    ldr       x4, switcher_caps
-    stp       c1, c2, [x4]
+    // Save pointer to new allocated memory in `switcher_caps`
+    adr       x2, switcher_caps
+    str       x0, [x2]
+
+    // Derive DDC for switcher
+    cvtp      c2, x0
+    scbnds    c2, c2, x1
+
+    // Derive PCC for `switch_compartments` and friends
+    adr       x3, switcher_entry
+    adr       x4, switch_compartment_end
+    sub       x4, x4, x3
+    cvtp      c3, x3
+    scbndse   c3, c3, x4
+
+    // Store (DDC, PCC) at `switcher_caps`
+    ldr       x1, switcher_caps
+    stp       c2, c3, [x1], #32
+
+    // Save start address for compartment capabilities in `comps_addr`
+    adr       x2, comps_addr
+    str       x1, [x2]
 
     ret
 

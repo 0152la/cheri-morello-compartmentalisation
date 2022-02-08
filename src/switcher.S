@@ -5,6 +5,7 @@
 
 .global switcher_entry
 .global switch_compartment
+.global switch_compartment_end
 
 /**
  * Entry point from user code to switcher function
@@ -129,3 +130,5 @@ clean:
     // We need LR (x30) to return. The call to this helper already cleaned it.
     // Don't replace SP; this needs special handling by the caller anyway.
     ret
+
+switch_compartment_end:
