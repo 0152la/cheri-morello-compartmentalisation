@@ -51,15 +51,15 @@ asm_call_wrapper:
  */
 .type init_compartments, "function"
 init_compartments:
-    // Save `lr`
-    mov       x6, lr
-
     // Compute size of required memory, equivalent to `length` parameter of
     // `mmap`
     mov       x0, #COMP_SIZE
     mov       x1, #MAX_COMP_COUNT
     mov       x2, #32    // size of the 2 switcher capabilities
     madd      x1, x0, x1, x2
+
+    // Store length and `lr` on stack, as we'll need them later
+    stp       x1, lr, [sp, #-16]!
 
     // Allocate memory for switcher
     mov       x0, xzr    // address
@@ -70,8 +70,8 @@ init_compartments:
     mov       w5, wzr    // offset
     bl        mmap
 
-    // Restore `lr`
-    mov       lr, x6
+    // Restore length and `lr`
+    ldp       x1, lr, [sp], #16
 
     // Save pointer to new allocated memory in `switcher_caps`
     adr       x2, switcher_caps
