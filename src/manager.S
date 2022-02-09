@@ -48,6 +48,8 @@ asm_call_wrapper:
  * memory region for use by switcher code, to contain required capabilities,
  * and deriving appropriate PCC/DDC values containing the executable switcher
  * code, and the aforementioned memory region, respectively.
+ *
+ * @return Pointer to newly allocated memory region
  */
 .type init_compartments, "function"
 init_compartments:
