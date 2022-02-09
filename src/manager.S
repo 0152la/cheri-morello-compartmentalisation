@@ -103,44 +103,62 @@ init_compartments:
 /**
  * Function to add information for a compartment
  *
- * @param c1 Start address
- * @param c2 Size of memory region
- * @param c3 Function address
+ * @param x0 Compartment memory size
+ * @param x1 Compartment executable function
+ *
+ * @return Pointer to newly allocated memory region
  */
 .type add_compartment, "function"
 add_compartment:
+    // Store inputs and `lr` so we can call `mmap`
+    stp       x0, x1, [sp, #-32]!
+    str       lr, [sp, #16]
+    mov       x1, x0
 
-  // Derive compartment PCC
-  cvtp        c3, x3
-  mov         x4, #320 // TODO dynamic value
-  scbndse     c3, c3, x4
+    // Allocate memory for new compartment
+    mov       x0, xzr    // address
+                         // length - already stored in `x1`
+    mov       w2, #3     // prot == PROT_READ | PROT_WRITE
+    mov       w3, #4098  // flags == MAP_PRIVATE | MAP_ANONYMOUS
+    mov       w4, #-1    // fd
+    mov       w5, wzr    // offset
+    bl        mmap
 
-  // Derive compartment DDC
-  cvtp        c1, x1
-  scbnds      c2, c1, x2
+    // Restore memory size and function address
+    ldp       x1, x2, [sp], #32
+    ldr       lr, [sp, #-16]
 
-  // Store new PCC and DDC
-  ldr         x0, comps_addr
-  ldr         x1, comps_cnt
-  mov         x3, #COMP_SIZE
-  madd        x0, x1, x2, x0
-  stp         c3, c2, [x0]
+    // Derive compartment DDC
+    cvtp      c0, x0
+    scbnds    c0, c0, x1
 
-  // Increment counter
-  adr         x3, comps_cnt
-  ldr         x4, [x3]
-  add         x4, x4, #1
-  str         x4, [x3]
+    // Derive compartment PCC
+    cvtp      c1, x2
+    mov       x2, #320 // TODO dynamic value
+    scbndse   c1, c1, x2
 
-  // Update switcher DDC
-  adr         x2, switcher_caps
-  ldr         c0, [x2]
-  gclen       x1, c0
-  add         x1, x1, #32
-  scbndse     c0, c0, x1
-  str         c0, [x2]
+    // Store new PCC and DDC
+    ldr       x2, comps_addr
+    ldr       x3, comps_cnt
+    mov       x4, #COMP_SIZE
+    madd      x2, x3, x4, x2
+    stp       c0, c1, [x2]
 
-  ret
+    // Increment counter
+    adr       x3, comps_cnt
+    ldr       x4, [x3]
+    add       x4, x4, #1
+    str       x4, [x3]
+
+    // Update switcher DDC
+    //adr       x2, switcher_caps
+    //ldr       c0, [x2]
+    //gclen     x1, c0
+    //add       x1, x1, #32
+    //scbndse   c0, c0, x1
+    //str       c0, [x2]
+
+    ret
 
 /**
  * Function to delete an existing compartment data
