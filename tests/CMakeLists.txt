@@ -8,3 +8,4 @@ endfunction()
 
 new_proj_test(simple_init)
 new_proj_test(simple_add)
+new_proj_test(simple_delete)

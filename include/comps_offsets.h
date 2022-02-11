@@ -3,4 +3,4 @@
 #define COMP_OFFSET_PCC 16
 #define COMP_OFFSET_STK_ADDR 32
 
-#define MAX_COMP_COUNT 2
+#define MAX_COMP_COUNT 3
