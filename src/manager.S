@@ -150,6 +150,10 @@ add_compartment:
     add       x4, x4, #1
     str       x4, [x3]
 
+    // Check we have not exceeded max number of compartments
+    cmp       x4, #MAX_COMP_COUNT
+    b.gt      abort
+
     // Update switcher DDC
     //adr       x2, switcher_caps
     //ldr       c0, [x2]
