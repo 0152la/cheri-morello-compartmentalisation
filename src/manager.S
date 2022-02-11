@@ -154,14 +154,6 @@ add_compartment:
     cmp       x4, #MAX_COMP_COUNT
     b.gt      abort
 
-    // Update switcher DDC
-    //adr       x2, switcher_caps
-    //ldr       c0, [x2]
-    //gclen     x1, c0
-    //add       x1, x1, #32
-    //scbndse   c0, c0, x1
-    //str       c0, [x2]
-
     ret
 
 /**
