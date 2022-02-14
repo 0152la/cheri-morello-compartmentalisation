@@ -22,7 +22,8 @@ switcher_entry:
 
 /** Code to perform actual switch
  *
- * @param x0 ID (in `comps` array) of compartment to switch to
+ * @param x0 Compartment info to switch to, as stored in `comps_addr`
+ *           pseudo-array
  */
 .type switch_compartment, "function"
 switch_compartment:
@@ -34,22 +35,15 @@ switch_compartment:
     // Expect switcher DDC in c29
     msr       DDC, c29
 
-    // Get compartment to switch to data
-    mov       x11, #COMP_SIZE
-    mul       x10, x10, x11
-
     // Load PCC, including function we are jumping to within compartment
-    add       x11, x10, #COMP_OFFSET_PCC
-    ldr       c0, [x29, x11]
+    ldr       c0, [x10, #COMP_OFFSET_PCC]
 
     // Load DDC
-    add       x11, x10, #COMP_OFFSET_DDC
-    ldr       c1, [x29, x11]
+    ldr       c1, [x10, #COMP_OFFSET_DDC]
 
     // Setup SP
     mov       x12, sp
-    add       x11, x10, #COMP_OFFSET_STK_ADDR
-    ldr       x11, [x29, x11]
+    ldr       x11, [x10, #COMP_OFFSET_STK_ADDR]
     mov       sp, x11
 
     // Install compartment DDC

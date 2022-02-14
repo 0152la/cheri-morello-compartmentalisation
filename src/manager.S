@@ -19,27 +19,7 @@ switcher_caps: .dword 0
 .global init_compartments
 .global add_compartment
 .global del_compartment
-
-/**
- * Wrapper to store/restore state when coming from C
- *
- * @param x0 ASM function to call
- * @param x1-x6 parameters to pass to function in c0
- */
-.type asm_call_wrapper, "function"
-asm_call_wrapper:
-    // Save `x0` so we can temporarily use it
-    cvtp      c0, x0
-    str       c0, [sp]
-
-    // Derive `clr` (in case asm function does something weird with `PCC`)
-    cvtp      c0, lr
-    swp       c0, c0, [sp]
-    sub       sp, sp, #16
-
-    blr       c0
-    ldr       clr, [sp, #16]!
-    ret       clr
+.global call_comp_func
 
 /**
  * Sets up memory for compartments
@@ -80,11 +60,13 @@ init_compartments:
     str       x0, [x2]
 
     // Derive DDC for switcher
-    cvtp      c2, x0
+    mrs       c3, DDC
+    cvt       c2, c3, x0
     scbnds    c2, c2, x1
 
     // Derive PCC for `switch_compartments` and friends
-    adr       x3, switcher_entry
+    //adr       x3, switcher_entry
+    adr       x3, switch_compartment
     adr       x4, switch_compartment_end
     sub       x4, x4, x3
     cvtp      c3, x3
@@ -113,7 +95,7 @@ add_compartment:
     // Store inputs and `lr` so we can call `mmap`
     stp       x0, x1, [sp, #-32]!
     str       lr, [sp, #16]
-    mov       x1, x0
+    add       x1, x0, #16 // add space for capability to use switcher
 
     // Allocate memory for new compartment
     mov       x0, xzr    // address
@@ -128,8 +110,13 @@ add_compartment:
     ldp       x1, x2, [sp], #32
     ldr       lr, [sp, #-16]
 
+    // Derive stack address
+    // TODO make dynamic
+    add       x5, x0, #992 // allignment
+
     // Derive compartment DDC
-    cvtp      c0, x0
+    mrs       c3, DDC
+    cvt       c0, c3, x0
     scbnds    c0, c0, x1
 
     // Derive compartment PCC
@@ -144,6 +131,9 @@ add_compartment:
     madd      x2, x3, x4, x2
     stp       c0, c1, [x2]
 
+    // Store compartment sp
+    str       x5, [x2, #COMP_OFFSET_STK_ADDR]
+
     // Increment counter
     adr       x3, comps_cnt
     ldr       x4, [x3]
@@ -154,7 +144,43 @@ add_compartment:
     cmp       x4, #MAX_COMP_COUNT
     b.gt      abort
 
+    // Add in indirect switcher capability
+
     ret
+
+/**
+ * Function to call a function that has been defined as being part of a
+ * container, via `add_compartment`
+ *
+ * @param x0 Address to function to be called
+ * @param x1-x6 Parameters to pass to underlying function
+ * @return The return value of the called function
+ */
+.type call_comp_func, "function"
+call_comp_func:
+    // Derive and save `clr`
+    cvtp      clr, lr
+    str       clr, [sp, #-16]!
+
+    // Save parameters on stack
+    stp       x1, x2, [sp, #-48]!
+    stp       x3, x4, [sp, #32]
+    stp       x5, x6, [sp, #16]
+
+    // Get corresponding compartment info
+    bl        pcc_from_addr
+
+    // Pop parameters from stack
+    ldp       x1, x2, [sp], #48
+    ldp       x3, x4, [sp, #-16]
+    ldp       x5, x6, [sp, #-32]
+
+    // Perform switch
+    ldr       x1, switcher_caps
+    cvtp      c1, x1
+    ldpblr    c29, [c1]
+    ldr       clr, [sp], #16
+    ret       clr
 
 /**
  * Function to delete an existing compartment data

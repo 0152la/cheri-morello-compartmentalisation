@@ -6,6 +6,9 @@ function(new_proj_test test_name)
              COMMAND ${CMAKE_SOURCE_DIR}/tests/run_test.sh $<TARGET_FILE:${test_name}>)
 endfunction()
 
+new_proj_test(offsets_check)
+
 new_proj_test(simple_init)
 new_proj_test(simple_add)
 new_proj_test(simple_delete)
+new_proj_test(simple_exec)
