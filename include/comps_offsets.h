@@ -1,3 +1,8 @@
+#define COMP_FIELDS 3
+#define COMP_IDX_DDC 0
+#define COMP_IDX_PCC 0
+#define COMP_IDX_STK_ADDR 0
+
 #define COMP_SIZE 48
 #define COMP_OFFSET_DDC 0
 #define COMP_OFFSET_PCC 16
