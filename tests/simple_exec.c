@@ -18,6 +18,7 @@ extern void* init_compartments();
 extern void* add_compartment(size_t, void*);
 extern void* del_compartment(void*);
 extern void* call_comp_func(void*, ...);
+extern void* call_compartment(void*, ...);
 
 /*******************************************************************************
  * Main
@@ -35,7 +36,7 @@ main()
     assert(add_compartment(comp_size, comp_f_fn) != MAP_FAILED);
     assert(add_compartment(comp_size, comp_g_fn) != MAP_FAILED);
 
-    call_comp_func(comp_f_fn);
+    call_compartment(comp_f_fn);
     void* __capability g_ddc =
         (void* __capability) comps_addr[COMP_FIELDS * 1 + COMP_IDX_DDC];
     void* g_ddc_base = (void*) cheri_address_get(g_ddc);
@@ -51,7 +52,9 @@ main()
 int
 comp_f_fn()
 {
-    call_comp_func(comp_g_fn, 42);
+    void* __capability * this_ddc = (__cheri_fromcap void* __capability *) cheri_ddc_get();
+    void* __capability this_call_comp_func = (void* __capability) *this_ddc;
+    asm("ldpblr c29, [c0]" : : "r"(this_call_comp_func));
     return 42;
 }
 

@@ -18,8 +18,8 @@ switcher_caps: .dword 0
 .global asm_call_wrapper
 .global init_compartments
 .global add_compartment
+.global call_compartment
 .global del_compartment
-.global call_comp_func
 
 /**
  * Sets up memory for compartments
@@ -65,9 +65,8 @@ init_compartments:
     scbnds    c2, c2, x1
 
     // Derive PCC for `switch_compartments` and friends
-    //adr       x3, switcher_entry
-    adr       x3, switch_compartment
-    adr       x4, switch_compartment_end
+    adr       x3, switcher_start
+    adr       x4, switcher_end
     sub       x4, x4, x3
     cvtp      c3, x3
     scbndse   c3, c3, x4
@@ -95,7 +94,7 @@ add_compartment:
     // Store inputs and `lr` so we can call `mmap`
     stp       x0, x1, [sp, #-32]!
     str       lr, [sp, #16]
-    add       x1, x0, #16 // add space for capability to use switcher
+    add       x1, x0, #16 // add space for extra capabilities for switching
 
     // Allocate memory for new compartment
     mov       x0, xzr    // address
@@ -118,6 +117,13 @@ add_compartment:
     mrs       c3, DDC
     cvt       c0, c3, x0
     scbnds    c0, c0, x1
+
+    // Add sealed indirect capability for switcher call
+    // (derived from privileged DDC)
+    ldr       x1, switcher_caps
+    cvt       c1, c3, x1
+    seal      c1, c1, lpb
+    str       c1, [x0]
 
     // Derive compartment PCC
     cvtp      c1, x2
@@ -144,41 +150,26 @@ add_compartment:
     cmp       x4, #MAX_COMP_COUNT
     b.gt      abort
 
-    // Add in indirect switcher capability
-
     ret
 
 /**
- * Function to call a function that has been defined as being part of a
- * container, via `add_compartment`
+ * Function to call a compartment from privileged mode. Same parameters as
+ * `call_comp_func`.
  *
- * @param x0 Address to function to be called
- * @param x1-x6 Parameters to pass to underlying function
- * @return The return value of the called function
+ * @param x0 Address of function to call
+ * @param x1-x6 Parameters to pass to called function
  */
-.type call_comp_func, "function"
-call_comp_func:
+.type call_compartment, "function"
+call_compartment:
     // Derive and save `clr`
     cvtp      clr, lr
     str       clr, [sp, #-16]!
 
-    // Save parameters on stack
-    stp       x1, x2, [sp, #-48]!
-    stp       x3, x4, [sp, #32]
-    stp       x5, x6, [sp, #16]
+    // Register setup and call switcher
+    mrs       c29, DDC
+    bl        switch_compartment
 
-    // Get corresponding compartment info
-    bl        pcc_from_addr
-
-    // Pop parameters from stack
-    ldp       x1, x2, [sp], #48
-    ldp       x3, x4, [sp, #-16]
-    ldp       x5, x6, [sp, #-32]
-
-    // Perform switch
-    ldr       x1, switcher_caps
-    cvtp      c1, x1
-    ldpblr    c29, [c1]
+    // Restore `clr` and return
     ldr       clr, [sp], #16
     ret       clr
 

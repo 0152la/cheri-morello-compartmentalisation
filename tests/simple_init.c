@@ -14,8 +14,8 @@
 extern void* init_compartments();
 extern void* __capability * switcher_caps;
 
-extern void switcher_entry();
-extern void switch_compartment_end();
+extern void switcher_start();
+extern void switcher_end();
 
 /*******************************************************************************
  * Main
@@ -36,9 +36,9 @@ main()
 
     void* __capability switcher_pcc = switcher_caps[1];
     assert(cheri_is_valid(switcher_pcc));
-    assert(cheri_address_get(switcher_pcc) == (unsigned long) switcher_entry);
+    assert(cheri_address_get(switcher_pcc) == (unsigned long) switcher_start);
     assert(cheri_address_get(switcher_pcc) + cheri_length_get(switcher_pcc) ==
-            (unsigned long) switch_compartment_end);
+            (unsigned long) switcher_end);
 
     return 0;
 }
