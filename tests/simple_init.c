@@ -32,7 +32,7 @@ main()
     void* __capability switcher_ddc = switcher_caps[0];
     assert(cheri_is_valid(switcher_ddc));
     assert(cheri_length_get(switcher_ddc) ==
-            COMP_SIZE * MAX_COMP_COUNT + 2 * sizeof(void* __capability));
+            COMP_SIZE * MAX_COMP_COUNT + SWITCHER_OFFSET_COMPS);
 
     void* __capability switcher_pcc = switcher_caps[1];
     assert(cheri_is_valid(switcher_pcc));

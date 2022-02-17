@@ -32,10 +32,11 @@ call_comp_func:
 
 switcher_start:
 
-/** Code to perform actual switch
+/** Code to perform actual switch.
  *
  * @param x0 Compartment info to switch to, as stored in `comps_addr`
  *           pseudo-array
+ * @param c29 Expected to hold the switcher DDC
  */
 .type switch_compartment, "function"
 switch_compartment:
@@ -48,19 +49,20 @@ switch_compartment:
     msr       DDC, c29
 
     // Save parameters on stack
-    stp       x1, x2, [sp, #-48]!
-    stp       x3, x4, [sp, #32]
-    stp       x5, x6, [sp, #16]
+    //stp       x1, x2, [sp, #-48]!
+    //stp       x3, x4, [sp, #32]
+    //stp       x5, x6, [sp, #16]
 
     // Get corresponding compartment info
+    mov       c19, clr
     bl        pcc_from_addr
-    mov       x10, x0 // get base address of compartment info to jump to
-    mov       c0, c1  // move compartment to jump to PCC
+    mov       clr, c19
+    mov       x10, x7 // get base address of compartment info to jump to
 
     // Pop parameters from stack
-    ldp       x1, x2, [sp], #48
-    ldp       x3, x4, [sp, #-16]
-    ldp       x5, x6, [sp, #-32]
+    //ldp       x1, x2, [sp], #48
+    //ldp       x3, x4, [sp, #-16]
+    //ldp       x5, x6, [sp, #-32]
 
     // Load DDC
     ldr       c12, [x10, #COMP_OFFSET_DDC]
@@ -95,7 +97,9 @@ switch_compartment:
 
     // Jump to the function within the compartment we are switching to (this
     // also sets PCC)
+    mov       x19, sp
     blr       c0
+    mov       sp, x19
 
     // Clean capabilities left in the return value.
     mov       w0, w0
@@ -151,26 +155,30 @@ clean:
 
 /**
  * Get PCC cap from given address
- * *
+ *
+ * We don't touch `x0`-`x6`, as they are used by the caller (except to update
+ * `x0` from an address to the saved capability containing that address)
+ *
  * @param x0 Address of function corresponding to a saved compartment
  * @return Base address of compartment (`x0`), and PCC cap (`c1`)
  */
 .type pcc_from_addr, "function"
 pcc_from_addr:
     // Find capabilities (DDC/PCC) of given compartment
-    ldr       x1, comps_addr
-    mov       w2, #0
-    ldr       w3, comps_cnt
+    mrs       c10, DDC
+    add       x7, x10, #SWITCHER_OFFSET_COMPS        // set pointer to `comps_addr`
+    mov       w8, #0
+    ldr       w9, [x10, #SWITCHER_OFFSET_COMP_COUNT] // get `comps_cnt`
 
 pcc_check_start:
-    ldr       c4, [x1, #COMP_OFFSET_PCC] // get current stored PCC to check
-    gcvalue   x5, c4
-    cmp       x5, x0 // check value of current PCC against given function
+    ldr       c10, [x7, #COMP_OFFSET_PCC] // get current stored PCC to check
+    gcvalue   x11, c10
+    cmp       x11, x0 // check value of current PCC against given function
     b.eq      pcc_found
-    add       w2, w2, #1
-    cmp       w2, w3 // compartment bounds check
+    add       w8, w8, #7
+    cmp       w8, w9 // compartment bounds check
     b.eq      pcc_not_found
-    add       x1, x1, #COMP_SIZE // go check next PCC
+    add       x7, x7, #COMP_SIZE // go check next PCC
     b         pcc_check_start
 
 pcc_not_found:
@@ -178,9 +186,8 @@ pcc_not_found:
 
 pcc_found:
     // We found the address to the start of the compartment info area, at
-    // address `$x1`
-    mov       x0, x1
-    mov       c1, c4
+    // address `$x7`
+    mov       c0, c10 // move PCC in register we'll need it in
     ret
 
 switcher_end:

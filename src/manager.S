@@ -37,7 +37,7 @@ init_compartments:
     // `mmap`
     mov       x0, #COMP_SIZE
     mov       x1, #MAX_COMP_COUNT
-    mov       x2, #32    // size of the 2 switcher capabilities
+    mov       x2, #SWITCHER_OFFSET_COMPS // size of additional switcher metadata
     madd      x1, x0, x1, x2
 
     // Store length and `lr` on stack, as we'll need them later
@@ -73,10 +73,14 @@ init_compartments:
 
     // Store (DDC, PCC) at `switcher_caps`
     ldr       x1, switcher_caps
-    stp       c2, c3, [x1], #32
+    stp       c2, c3, [x1, #SWITCHER_OFFSET_DDC]
+
+    // Ensure we set compartment count to 0
+    str       xzr, [x1, #SWITCHER_OFFSET_COMP_COUNT]
 
     // Save start address for compartment capabilities in `comps_addr`
     adr       x2, comps_addr
+    add       x1, x1, #SWITCHER_OFFSET_COMPS
     str       x1, [x2]
 
     ret
@@ -145,6 +149,9 @@ add_compartment:
     ldr       x4, [x3]
     add       x4, x4, #1
     str       x4, [x3]
+    // .. and store it in switcher meta-data
+    ldr       x3, switcher_caps
+    str       x4, [x3, #SWITCHER_OFFSET_COMP_COUNT]
 
     // Check we have not exceeded max number of compartments
     cmp       x4, #MAX_COMP_COUNT
@@ -166,7 +173,8 @@ call_compartment:
     str       clr, [sp, #-16]!
 
     // Register setup and call switcher
-    mrs       c29, DDC
+    ldr       x29, switcher_caps
+    ldr       c29, [x29, #SWITCHER_OFFSET_DDC]
     bl        switch_compartment
 
     // Restore `clr` and return

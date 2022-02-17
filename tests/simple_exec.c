@@ -40,7 +40,7 @@ main()
     void* __capability g_ddc =
         (void* __capability) comps_addr[COMP_FIELDS * 1 + COMP_IDX_DDC];
     void* g_ddc_base = (void*) cheri_address_get(g_ddc);
-    assert( (*(int*)(g_ddc_base + 160)) == 42);
+    assert( (*(int*)(g_ddc_base + 160)) == 43);
 
     return 0;
 }
@@ -54,14 +54,33 @@ comp_f_fn()
 {
     void* __capability * this_ddc = (__cheri_fromcap void* __capability *) cheri_ddc_get();
     void* __capability this_call_comp_func = (void* __capability) *this_ddc;
-    asm("ldpblr c29, [c0]" : : "r"(this_call_comp_func));
-    return 42;
+    assert(cheri_is_valid(this_call_comp_func));
+    unsigned int val = 42;
+    int (*fn)(unsigned int) = comp_g_fn;
+
+    // Emulate a capability function call, setting parameters
+    asm("stp %0, %1, [sp, #-32]!\n\t"
+        "str %w2, [sp, #16]\n\t"
+        "ldr c2, [sp, #16]\n\t"
+        "ldp x1, x0, [sp], #32\n\t"
+        "str clr, [sp, #16]!\n\t"
+        "ldpblr c29, [c2]\n\t"
+        "ldr clr, [sp], 16"
+        : "+r"(val)
+        : "r"(comp_g_fn), "r"(this_call_comp_func));
+
+    //assert(val == 43);
+    asm("ret clr");
+    /*return val;*/
 }
 
 int
 comp_g_fn(unsigned int val)
 {
+    val += 1;
     void* __capability this_ddc = cheri_ddc_get();
     *(__cheri_fromcap int*)(this_ddc + 160) = val;
-    return val;
+
+    asm("ret clr");
+    //return val;
 }
