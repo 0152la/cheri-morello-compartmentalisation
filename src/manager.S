@@ -152,11 +152,3 @@ add_compartment:
     b.gt      abort
 
     ret
-
-/**
- * Function to delete an existing compartment data
- *
- * @param c0 ID of compartment to be deleted
- */
-.type del_compartment, "function"
-del_compartment:
