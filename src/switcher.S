@@ -79,7 +79,6 @@ switch_compartment:
     blr       c0
 
     // Clean capabilities left in the return value.
-    mov       w0, w0
     bl        clean
 
     // Restore the caller's context and compartment.
