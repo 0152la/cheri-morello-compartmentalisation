@@ -36,6 +36,7 @@ switcher_start:
  *
  * @param x0 Compartment info to switch to, as stored in `comps_addr`
  *           pseudo-array
+ * @param x1-x6 Parameters to called function within target compartment
  * @param c29 Expected to hold the switcher DDC
  */
 .type switch_compartment, "function"
@@ -48,21 +49,11 @@ switch_compartment:
     // Expect switcher DDC in c29
     msr       DDC, c29
 
-    // Save parameters on stack
-    //stp       x1, x2, [sp, #-48]!
-    //stp       x3, x4, [sp, #32]
-    //stp       x5, x6, [sp, #16]
-
     // Get corresponding compartment info
     mov       c19, clr
     bl        pcc_from_addr
     mov       clr, c19
     mov       x10, x7 // get base address of compartment info to jump to
-
-    // Pop parameters from stack
-    //ldp       x1, x2, [sp], #48
-    //ldp       x3, x4, [sp, #-16]
-    //ldp       x5, x6, [sp, #-32]
 
     // Load DDC
     ldr       c12, [x10, #COMP_OFFSET_DDC]
@@ -93,17 +84,24 @@ switch_compartment:
 
     // Clean all registers, except register used to call function within
     // compartment we are transitioning to
-    bl        clean+4
+    bl        clean+36
+
+    // Shift registers, to comply with calling conventions
+    // TODO is there a better way of doing this?
+    mov       c7, c0
+    mov       x0, x1
+    mov       x1, x2
+    mov       x2, x3
+    mov       x3, x4
+    mov       x4, x5
+    mov       x5, x6
 
     // Jump to the function within the compartment we are switching to (this
     // also sets PCC)
-    mov       x19, sp
-    blr       c0
-    mov       sp, x19
+    blr       c7
 
     // Clean capabilities left in the return value.
-    mov       w0, w0
-    bl        clean
+    bl        clean+4
 
     // Restore the caller's context and compartment.
     ldp       c10, clr, [sp]

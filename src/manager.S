@@ -170,16 +170,14 @@ add_compartment:
 call_compartment:
     // Derive and save `clr`
     cvtp      clr, lr
-    str       clr, [sp, #-16]!
 
     // Register setup and call switcher
     ldr       x29, switcher_caps
     ldr       c29, [x29, #SWITCHER_OFFSET_DDC]
-    bl        switch_compartment
 
-    // Restore `clr` and return
-    ldr       clr, [sp], #16
-    ret       clr
+    adr       x7, switch_compartment
+    cvtp      c7, x7
+    br        c7 // need to call capability to set `clr`
 
 /**
  * Function to delete an existing compartment data

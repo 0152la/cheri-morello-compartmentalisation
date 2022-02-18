@@ -40,7 +40,7 @@ main()
     void* __capability g_ddc =
         (void* __capability) comps_addr[COMP_FIELDS * 1 + COMP_IDX_DDC];
     void* g_ddc_base = (void*) cheri_address_get(g_ddc);
-    assert( (*(int*)(g_ddc_base + 160)) == 43);
+    assert(((int*) g_ddc_base)[160] == 43);
 
     return 0;
 }
@@ -59,6 +59,7 @@ comp_f_fn()
     int (*fn)(unsigned int) = comp_g_fn;
 
     // Emulate a capability function call, setting parameters
+    // TODO have a good way of calling a capability function
     asm("stp %0, %1, [sp, #-32]!\n\t"
         "str %w2, [sp, #16]\n\t"
         "ldr c2, [sp, #16]\n\t"
@@ -69,9 +70,11 @@ comp_f_fn()
         : "+r"(val)
         : "r"(comp_g_fn), "r"(this_call_comp_func));
 
-    //assert(val == 43);
-    asm("ret clr");
-    /*return val;*/
+    //TODO have a good way of performing in-built compiler cleanup, such as
+    //resetting `sp`
+    asm("add sp, sp, #0x20\n\t"
+        "ret clr");
+    return val;
 }
 
 int
@@ -79,8 +82,10 @@ comp_g_fn(unsigned int val)
 {
     val += 1;
     void* __capability this_ddc = cheri_ddc_get();
-    *(__cheri_fromcap int*)(this_ddc + 160) = val;
+    int * addr = (__cheri_fromcap int*) this_ddc;
+    addr[160] = val;
 
-    asm("ret clr");
-    //return val;
+    asm("add sp, sp, #0x30\n\t"
+        "ret clr");
+    return val;
 }
