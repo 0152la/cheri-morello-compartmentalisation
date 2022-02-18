@@ -55,10 +55,7 @@ asm_call_wrapper:
 init_compartments:
     // Compute size of required memory, equivalent to `length` parameter of
     // `mmap`
-    mov       x0, #COMP_SIZE
-    mov       x1, #MAX_COMP_COUNT
-    mov       x2, #32    // size of the 2 switcher capabilities
-    madd      x1, x0, x1, x2
+    mov       x1, #(32 + (COMP_SIZE * MAX_COMP_COUNT))
 
     // Store length and `lr` on stack, as we'll need them later
     stp       x1, lr, [sp, #-16]!
