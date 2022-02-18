@@ -17,8 +17,7 @@ switcher_entry:
     mov      c29, c0
     mov      x0, #0
     cvtp     clr, lr
-    b        switch_compartment
-    ret      clr
+    // fall through into switch_compartment
 
 /** Code to perform actual switch
  *
