@@ -87,13 +87,12 @@ init_compartments:
     cvtp      c3, x3
     scbndse   c3, c3, x4
 
-    // Store (DDC, PCC) at `switcher_caps`
-    ldr       x1, switcher_caps
-    stp       c2, c3, [x1], #32
+    // Store (DDC, PCC) at `switcher_caps` (saved in `x0`)
+    stp       c2, c3, [x0], #32
 
     // Save start address for compartment capabilities in `comps_addr`
     adr       x2, comps_addr
-    str       x1, [x2]
+    str       x0, [x2]
 
     ret
 
