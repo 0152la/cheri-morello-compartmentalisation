@@ -141,10 +141,9 @@ add_compartment:
     stp       c0, c1, [x2]
 
     // Increment counter
-    adr       x3, comps_cnt
-    ldr       x4, [x3]
-    add       x4, x4, #1
-    str       x4, [x3]
+    adr       x4, comps_cnt
+    add       x3, x3, #1
+    str       x3, [x4]
 
     // Check we have not exceeded max number of compartments
     cmp       x4, #MAX_COMP_COUNT
