@@ -147,7 +147,7 @@ add_compartment:
     str       x3, [x4]
 
     // Check we have not exceeded max number of compartments
-    cmp       x4, #MAX_COMP_COUNT
+    cmp       x3, #MAX_COMP_COUNT
     b.gt      abort
 
     ret
